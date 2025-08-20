@@ -27,14 +27,12 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static xyz.tcreopargh.pouchofunknown.Util.findValidPouch;
-
-@Mod.EventBusSubscriber(modid = Tags.MOD_ID)
+@Mod.EventBusSubscriber(modid = PouchOfUnknownMod.MODID)
 public final class PouchOfUnknownEvents {
 
     public static final int MAX_SLOT_NUMBER = 40;
 
-    public static final AtomicReference<Method> method = new AtomicReference<>();
+    private static final AtomicReference<Method> method = new AtomicReference<>();
 
     static {
         try {
@@ -51,71 +49,101 @@ public final class PouchOfUnknownEvents {
     }
 
     public static void detect(EntityPlayer player, int index) {
-        ItemStack stack = player.inventory.getStackInSlot(index).copy();
-        if (stack.isEmpty() || isQualified(player, stack, true)) return;
 
-        ItemStack pouch = findValidPouch(player);
-        boolean hasValidPouch = !pouch.isEmpty() && isQualified(player, pouch, true);
-
-        if (hasValidPouch) {
-            handleWithPouch(player, stack, pouch);
-        } else {
-            handleWithoutPouch(player, stack);
-        }
-
-        player.inventory.setInventorySlotContents(index, ItemStack.EMPTY);
-        syncInventory(player);
-    }
-
-    private static void handleWithPouch(EntityPlayer player, ItemStack stack, ItemStack pouch) {
-        if (isDisabledStage(stack)) {
-            if (PouchConfig.showMessage) {
-                sendMessage(player, "pouchofunknown.disabled_item_message", TextFormatting.RED);
+        boolean hasPouch = false;
+        ItemStack pouch = ItemStack.EMPTY;
+        IBaublesItemHandler baubles = BaublesApi.getBaublesHandler(player);
+        for (int i = 0; i < baubles.getSlots(); i++) {
+            ItemStack stack = baubles.getStackInSlot(i);
+            if (isValidPouch(stack)) {
+                hasPouch = true;
+                pouch = stack;
+                break;
             }
-            return;
         }
-
-        ItemStack remnant = Util.insertItem(pouch, stack);
-        String displayName = getDisplayName(stack, player);
-
-        if (remnant.isEmpty()) {
-            if (PouchConfig.showMessage) {
-                sendMessage(player, "pouchofunknown.pickup_message", TextFormatting.YELLOW, displayName);
+        if (!hasPouch) {
+            for (int i = 0; i < MAX_SLOT_NUMBER; i++) {
+                ItemStack stack = player.inventory.getStackInSlot(i);
+                if (isValidPouch(stack)) {
+                    hasPouch = true;
+                    pouch = stack;
+                    break;
+                }
             }
-        } else {
-            boolean destroy = PouchConfig.destroyItemWithoutPouch;
-            if (!destroy) player.dropItem(remnant, true);
-
-            String messageKey = destroy ? "pouchofunknown.full_destroy_message" : "pouchofunknown.full_message";
-            sendMessage(player, messageKey, TextFormatting.YELLOW, displayName, "\n");
         }
-    }
 
-    private static void handleWithoutPouch(EntityPlayer player, ItemStack stack) {
-        boolean destroy = PouchConfig.destroyItemWithoutPouch;
-        if (!destroy) player.dropItem(stack, true);
+        int indexBegin = 0;
+        int indexEnd = MAX_SLOT_NUMBER;
 
-        if (PouchConfig.showMessage && !stack.isEmpty()) {
-            String displayName = getDisplayName(stack, player);
-            String messageKey = destroy ? "pouchofunknown.destroy_message" : "pouchofunknown.drop_message";
-            sendMessage(player, messageKey, TextFormatting.YELLOW, displayName, "\n");
+
+        /* This doesnt check the hotbar for some reason
+        if (index >= 0) {
+            indexBegin = index;
+            indexEnd = index;
         }
-    }
+        */
 
-    private static boolean isDisabledStage(ItemStack stack) {
-        String stage = ItemStages.getStage(stack);
-        return stage != null && Arrays.asList(PouchConfig.disabledStagesList).contains(stage);
-    }
+        for (int slot = indexBegin; slot <= indexEnd; slot++) {
+            ItemStack stack = player.inventory.getStackInSlot(slot).copy();
+            ItemStack remnant = stack;
+            if (!isQualified(player, stack, true)) {
+                if (hasPouch && isQualified(player, pouch, true)) {
+                    if (Arrays.asList(PouchConfig.disabledStagesList).contains(ItemStages.getStage(stack))) {
+                        if (PouchConfig.showMessage) {
+                            player.sendMessage(new TextComponentTranslation(
+                                    "pouchofunknown.disabled_item_message")
+                                    .setStyle(new Style().setColor(TextFormatting.RED)));
+                        }
+                    } else {
+                        remnant = Util.insertItem(pouch, remnant);
+                        String displayString = getDisplayName(stack, player);
+                        if (!remnant.isEmpty()) {
+                            if (!PouchConfig.destroyItemWithoutPouch) {
+                                player.dropItem(remnant, true);
+                                player.sendMessage(new TextComponentTranslation(
+                                        "pouchofunknown.full_message", displayString, "\n")
+                                        .setStyle(new Style().setColor(TextFormatting.YELLOW)));
+                            } else {
+                                player.sendMessage(new TextComponentTranslation(
+                                        "pouchofunknown.full_destroy_message", displayString, "\n")
+                                        .setStyle(new Style().setColor(TextFormatting.YELLOW)));
+                            }
 
-    private static void sendMessage(EntityPlayer player, String key, TextFormatting color, Object... args) {
-        player.sendMessage(new TextComponentTranslation(key, args).setStyle(new Style().setColor(color)));
-    }
-
-    private static void syncInventory(EntityPlayer player) {
-        if (player instanceof EntityPlayerMP) {
-            ((EntityPlayerMP) player).sendContainerToPlayer(player.inventoryContainer);
+                        } else {
+                            if (PouchConfig.showMessage) {
+                                player.sendMessage(new TextComponentTranslation(
+                                        "pouchofunknown.pickup_message", displayString)
+                                        .setStyle(new Style().setColor(TextFormatting.YELLOW)));
+                            }
+                        }
+                    }
+                } else {
+                    if (!PouchConfig.destroyItemWithoutPouch) {
+                        player.dropItem(stack, true);
+                    }
+                    if (PouchConfig.showMessage && !stack.isEmpty()) {
+                        String displayString = getDisplayName(stack, player);
+                        if (!stack.isEmpty()) {
+                            if (!PouchConfig.destroyItemWithoutPouch) {
+                                player.sendMessage(new TextComponentTranslation(
+                                        "pouchofunknown.drop_message", displayString, "\n")
+                                        .setStyle(new Style().setColor(TextFormatting.YELLOW)));
+                            } else {
+                                player.sendMessage(new TextComponentTranslation(
+                                        "pouchofunknown.destroy_message", displayString, "\n")
+                                        .setStyle(new Style().setColor(TextFormatting.YELLOW)));
+                            }
+                        }
+                    }
+                }
+                player.inventory.setInventorySlotContents(slot, ItemStack.EMPTY);
+                if (player instanceof EntityPlayerMP) {
+                    EntityPlayerMP playerMP = (EntityPlayerMP) player;
+                    playerMP.sendContainerToPlayer(player.inventoryContainer);
+                }
+                player.inventoryContainer.detectAndSendChanges();
+            }
         }
-        player.inventoryContainer.detectAndSendChanges();
     }
 
     @SubscribeEvent
@@ -234,9 +262,9 @@ public final class PouchOfUnknownEvents {
 
     @SubscribeEvent
     public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs) {
-        if (eventArgs.getModID().equals(Tags.MOD_ID)) {
+        if (eventArgs.getModID().equals(PouchOfUnknownMod.MODID)) {
             PouchOfUnknownMod.logger.info("Pouch Of Unknown config changed!");
-            ConfigManager.sync(Tags.MOD_ID, Config.Type.INSTANCE);
+            ConfigManager.sync(PouchOfUnknownMod.MODID, Config.Type.INSTANCE);
         }
     }
 

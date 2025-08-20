@@ -35,11 +35,11 @@ import java.util.Objects;
 import static xyz.tcreopargh.pouchofunknown.PouchOfUnknownEvents.isQualified;
 
 
-@Mod.EventBusSubscriber(modid = Tags.MOD_ID)
+@Mod.EventBusSubscriber(modid = PouchOfUnknownMod.MODID)
 public final class ItemPouchOfUnknown extends Item implements IBauble {
 
     public static final ItemPouchOfUnknown itemPouchOfUnknown = new ItemPouchOfUnknown();
-    public static final String registryName = Tags.MOD_ID + ":" + "pouch";
+    public static final String registryName = PouchOfUnknownMod.MODID + ":" + "pouch";
 
     public static final String INVENTORY_TAG_NAME = "Inventory";
 
