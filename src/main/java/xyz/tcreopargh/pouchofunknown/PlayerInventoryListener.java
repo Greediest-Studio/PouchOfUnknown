@@ -7,7 +7,13 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class PlayerInventoryListener implements IContainerListener {
+
+    private final Map<Integer, ItemStack> lastSlotStates = new HashMap<>();
+
     private final EntityPlayerMP player;
 
     private boolean lock = false;
@@ -28,15 +34,22 @@ public class PlayerInventoryListener implements IContainerListener {
 
     @Override
     public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack) {
-        if(lock) {
-            return;
-        }
-        if (!stack.isEmpty())
-        {
-            lock = true;
-            PouchOfUnknownEvents.detect(player, slotInd);
-            lock = false;
-        }
+        if (lock || stack.isEmpty()) return;
+
+        ItemStack last = lastSlotStates.get(slotInd);
+        if (shouldSkipUpdate(stack, last)) return;
+
+        lastSlotStates.put(slotInd, stack.copy());
+        lock = true;
+        PouchOfUnknownEvents.detect(player, slotInd);
+        lock = false;
+    }
+
+    private boolean shouldSkipUpdate(ItemStack current, ItemStack previous) {
+        return previous != null &&
+                ItemStack.areItemsEqual(current, previous) &&
+                current.getCount() == previous.getCount() &&
+                (PouchConfig.ignoreNBT || ItemStack.areItemStackTagsEqual(current, previous));
     }
 
     @Override
