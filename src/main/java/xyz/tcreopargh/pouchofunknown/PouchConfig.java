@@ -11,12 +11,8 @@ public class PouchConfig {
     public static boolean showMessage = true;
 
     @Config.LangKey("pouchofunknown.config.ignore_nbt")
-    @Config.Ignore()
-    @Config.Comment({
-            "THIS OPTION IS DISABLED FOR NOW, CHANGING IT HAS NO EFFECT",
-            "Whether to ignore the NBT tag of any item and stage an item with any NBT tag to the stage of it's base item." ,
-            "WARNING: DON'T SET THIS TO TRUE IF YOUR SCRIPT STAGED SOME ITEMS WITH SPECIFIC NBT TAGS! [default: false]"})
-    public static boolean ignoreNBT = false;
+    @Config.Comment("是否忽略在背包中变动的物品nbt")
+    public static boolean ignoreNBT = true;
 
     @Config.RangeInt(min = 1, max = 4096)
     @Config.LangKey("pouchofunknown.config.pouch_capacity")

@@ -238,12 +238,7 @@ public final class PouchOfUnknownEvents {
         if (player.isCreative() && ignoreCreative) {
             return true;
         }
-        if (PouchConfig.ignoreNBT) {
-            ItemStack baseStack = new ItemStack(new Item().setRegistryName(Objects.requireNonNull(stack.getItem().getRegistryName())), stack.getCount(), stack.getItemDamage());
-            return GameStageHelper.hasStage(player, ItemStages.getStage(baseStack));
-        } else {
-            return GameStageHelper.hasStage(player, ItemStages.getStage(stack));
-        }
+        return GameStageHelper.hasStage(player, ItemStages.getStage(stack));
     }
 
     public static String getDisplayName(ItemStack stack, ICommandSender sender) {
