@@ -229,13 +229,17 @@ public final class PouchOfUnknownEvents {
     }
 
     public static boolean isQualified(EntityPlayer player, ItemStack stack, boolean ignoreCreative) {
-        if (ItemStages.getStage(stack) == null || stack.isEmpty()) {
+        if (stack.isEmpty()) {
+            return true;
+        }
+        String stage = ItemStages.getStage(stack);
+        if (stage == null) {
             return true;
         }
         if (player.isCreative() && ignoreCreative) {
             return true;
         }
-        return GameStageHelper.hasStage(player, ItemStages.getStage(stack));
+        return GameStageHelper.hasStage(player, stage);
     }
 
     public static String getDisplayName(ItemStack stack, ICommandSender sender) {

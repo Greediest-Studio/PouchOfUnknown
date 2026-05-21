@@ -102,16 +102,18 @@ public final class ItemPouchOfUnknown extends Item implements IBauble {
             int dropCount = 0;
             List<ItemStack> items = Util.getItems(pouch);
             boolean isInventoryFull = false;
+            boolean hasEmptySlot = pickUpAll || player.inventory.getFirstEmptyStack() >= 0;
             for (int i = items.size() - 1; i >= 0; i--) {
                 ItemStack current = items.get(i);
                 if (isQualified(player, current, false)) {
-                    if (!current.isEmpty() && (pickUpAll || player.inventory.getFirstEmptyStack() >= 0)) {
+                    if (!current.isEmpty() && hasEmptySlot) {
                         dropCount++;
                         ItemStack extract = current;
                         items.set(i, ItemStack.EMPTY);
                         ItemHandlerHelper.giveItemToPlayer(player, extract);
+                        hasEmptySlot = pickUpAll || player.inventory.getFirstEmptyStack() >= 0;
                     }
-                    if (!pickUpAll && player.inventory.getFirstEmptyStack() < 0) {
+                    if (!pickUpAll && !hasEmptySlot) {
                         isInventoryFull = true;
                     }
                 }
