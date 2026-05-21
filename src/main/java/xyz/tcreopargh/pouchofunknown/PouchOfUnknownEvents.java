@@ -8,7 +8,6 @@ import net.darkhax.itemstages.ItemStages;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentTranslation;
@@ -33,16 +32,6 @@ public final class PouchOfUnknownEvents {
     public static final int MAX_SLOT_NUMBER = 40;
 
     private static final AtomicReference<Method> method = new AtomicReference<>();
-
-    static {
-        try {
-            method.set(ItemStages.class.getDeclaredMethod("getUnfamiliarName", ItemStack.class));
-            method.get().setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     public static void detect(EntityPlayer player) {
         detect(player, -1);
@@ -246,11 +235,9 @@ public final class PouchOfUnknownEvents {
         if (PouchConfig.showItemName) {
             unfamiliarName = stack.getDisplayName();
         } else {
-            try {
-                unfamiliarName = (String) method.get().invoke(null, stack);
-            } catch (Exception e) {
-                unfamiliarName = new TextComponentTranslation("pouchofunknown.unfamiliar.default.name").getFormattedText();
-            }
+            unfamiliarName = ItemStages.CUSTOM_NAMES.containsKey(stack)
+                    ? ItemStages.CUSTOM_NAMES.get(stack)
+                    : new TextComponentTranslation("pouchofunknown.unfamiliar.default.name").getFormattedText();
         }
         return TextFormatting.GOLD + unfamiliarName + " " + TextFormatting.YELLOW + "*" + " " + TextFormatting.AQUA + stack.getCount() + TextFormatting.YELLOW;
     }
