@@ -8,10 +8,16 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.WeakHashMap;
 
 public class PlayerInventoryListener implements IContainerListener {
+    private static final Map<Container, Set<UUID>> LISTENING_PLAYERS = new WeakHashMap<>();
+
     private final EntityPlayerMP player;
 
     private final Map<Integer, Object> lastSlotStates = new HashMap<>();
@@ -20,6 +26,17 @@ public class PlayerInventoryListener implements IContainerListener {
 
     public PlayerInventoryListener(EntityPlayerMP player) {
         this.player = player;
+    }
+
+    public static void addTo(Container container, EntityPlayerMP player) {
+        Set<UUID> playerIds = LISTENING_PLAYERS.get(container);
+        if (playerIds == null) {
+            playerIds = new HashSet<>();
+            LISTENING_PLAYERS.put(container, playerIds);
+        }
+        if (playerIds.add(player.getUniqueID())) {
+            container.addListener(new PlayerInventoryListener(player));
+        }
     }
 
     @Override

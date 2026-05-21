@@ -26,41 +26,19 @@ import java.util.Objects;
 @Mod.EventBusSubscriber(modid = PouchOfUnknownMod.MODID)
 public final class PouchOfUnknownEvents {
 
-    public static final int MAX_SLOT_NUMBER = 40;
-
     public static void detect(EntityPlayer player) {
         detect(player, -1);
     }
 
     public static void detect(EntityPlayer player, int index) {
 
-        boolean hasPouch = false;
-        ItemStack pouch = ItemStack.EMPTY;
-        IBaublesItemHandler baubles = BaublesApi.getBaublesHandler(player);
-        for (int i = 0; i < baubles.getSlots(); i++) {
-            ItemStack stack = baubles.getStackInSlot(i);
-            if (isValidPouch(stack)) {
-                hasPouch = true;
-                pouch = stack;
-                break;
-            }
-        }
-        if (!hasPouch) {
-            for (int i = 0; i < MAX_SLOT_NUMBER; i++) {
-                ItemStack stack = player.inventory.getStackInSlot(i);
-                if (isValidPouch(stack)) {
-                    hasPouch = true;
-                    pouch = stack;
-                    break;
-                }
-            }
-        }
-
+        ItemStack pouch = findPouch(player);
+        String pouchStage = getItemStage(pouch);
         int indexBegin = 0;
-        int indexEnd = MAX_SLOT_NUMBER;
+        int indexEnd = player.inventory.getSizeInventory() - 1;
 
 
-        if (index >= 0 && index <= MAX_SLOT_NUMBER) {
+        if (index >= 0 && index <= indexEnd) {
             indexBegin = index;
             indexEnd = index;
         }
@@ -68,9 +46,10 @@ public final class PouchOfUnknownEvents {
         for (int slot = indexBegin; slot <= indexEnd; slot++) {
             ItemStack stack = player.inventory.getStackInSlot(slot).copy();
             ItemStack remnant = stack;
-            if (!isQualified(player, stack, true)) {
-                if (hasPouch && isQualified(player, pouch, true)) {
-                    if (isDisabledStage(ItemStages.getStage(stack))) {
+            String stage = getItemStage(stack);
+            if (!isQualified(player, stage, true)) {
+                if (!pouch.isEmpty() && isQualified(player, pouchStage, true)) {
+                    if (isDisabledStage(stage)) {
                         if (PouchConfig.showMessage) {
                             player.sendMessage(new TextComponentTranslation(
                                     "pouchofunknown.disabled_item_message")
@@ -134,34 +113,15 @@ public final class PouchOfUnknownEvents {
             return;
         }
         EntityPlayer player = event.getEntityPlayer();
-        boolean hasPouch = false;
-        ItemStack pouch = ItemStack.EMPTY;
-        IBaublesItemHandler baubles = BaublesApi.getBaublesHandler(player);
-        for (int i = 0; i < baubles.getSlots(); i++) {
-            ItemStack stack = baubles.getStackInSlot(i);
-            if (isValidPouch(stack)) {
-                hasPouch = true;
-                pouch = stack;
-                break;
-            }
-        }
-        if (!hasPouch) {
-            for (int i = 0; i < MAX_SLOT_NUMBER; i++) {
-                ItemStack stack = player.inventory.getStackInSlot(i);
-                if (isValidPouch(stack)) {
-                    hasPouch = true;
-                    pouch = stack;
-                    break;
-                }
-            }
-        }
-
+        ItemStack pouch = findPouch(player);
+        String pouchStage = getItemStage(pouch);
         ItemStack stack = event.getItem().getItem();
         ItemStack remnant = stack;
-        if (!isQualified(player, stack, true)) {
+        String stage = getItemStage(stack);
+        if (!isQualified(player, stage, true)) {
             event.setCanceled(true);
-            if (hasPouch && isQualified(player, pouch, true)) {
-                if (isDisabledStage(ItemStages.getStage(stack))) {
+            if (!pouch.isEmpty() && isQualified(player, pouchStage, true)) {
+                if (isDisabledStage(stage)) {
                     event.getItem().world.removeEntity(event.getItem());
                     if (PouchConfig.showMessage) {
                         player.sendMessage(new TextComponentTranslation(
@@ -214,6 +174,27 @@ public final class PouchOfUnknownEvents {
         return !pouch.isEmpty() && Objects.equals(pouch.getItem().getRegistryName(), ItemPouchOfUnknown.itemPouchOfUnknown.getRegistryName());
     }
 
+    public static ItemStack findPouch(EntityPlayer player) {
+        IBaublesItemHandler baubles = BaublesApi.getBaublesHandler(player);
+        for (int i = 0; i < baubles.getSlots(); i++) {
+            ItemStack stack = baubles.getStackInSlot(i);
+            if (isValidPouch(stack)) {
+                return stack;
+            }
+        }
+        for (int i = 0; i < player.inventory.getSizeInventory(); i++) {
+            ItemStack stack = player.inventory.getStackInSlot(i);
+            if (isValidPouch(stack)) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public static String getItemStage(ItemStack stack) {
+        return stack.isEmpty() ? null : ItemStages.getStage(stack);
+    }
+
     public static boolean isDisabledStage(String stage) {
         if (stage == null) {
             return false;
@@ -227,10 +208,10 @@ public final class PouchOfUnknownEvents {
     }
 
     public static boolean isQualified(EntityPlayer player, ItemStack stack, boolean ignoreCreative) {
-        if (stack.isEmpty()) {
-            return true;
-        }
-        String stage = ItemStages.getStage(stack);
+        return isQualified(player, getItemStage(stack), ignoreCreative);
+    }
+
+    public static boolean isQualified(EntityPlayer player, String stage, boolean ignoreCreative) {
         if (stage == null) {
             return true;
         }
@@ -263,14 +244,14 @@ public final class PouchOfUnknownEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onOpenContainer(net.minecraftforge.event.entity.player.PlayerContainerEvent event) {
         if (event.getEntityPlayer() instanceof EntityPlayerMP) {
-            event.getContainer().addListener(new PlayerInventoryListener((EntityPlayerMP) event.getEntityPlayer()));
+            PlayerInventoryListener.addTo(event.getContainer(), (EntityPlayerMP) event.getEntityPlayer());
         }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.player instanceof EntityPlayerMP) {
-            event.player.inventoryContainer.addListener(new PlayerInventoryListener((EntityPlayerMP) event.player));
+            PlayerInventoryListener.addTo(event.player.inventoryContainer, (EntityPlayerMP) event.player);
         }
     }
 
@@ -278,7 +259,7 @@ public final class PouchOfUnknownEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerClone(net.minecraftforge.event.entity.player.PlayerEvent.Clone event) {
         if (event.getEntityPlayer() instanceof EntityPlayerMP) {
-            event.getEntityPlayer().inventoryContainer.addListener(new PlayerInventoryListener((EntityPlayerMP) event.getEntityPlayer()));
+            PlayerInventoryListener.addTo(event.getEntityPlayer().inventoryContainer, (EntityPlayerMP) event.getEntityPlayer());
         }
     }
 
