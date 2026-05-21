@@ -26,23 +26,33 @@ public class PlayerInventoryListener implements IContainerListener {
         if(lock) {
             return;
         }
-        lock = true;
-        PouchOfUnknownEvents.detect(player);
-        lock = false;
+        try {
+            lock = true;
+            PouchOfUnknownEvents.detect(player);
+        } finally {
+            lock = false;
+        }
     }
 
     @Override
     public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack) {
-        if (lock || stack.isEmpty()) return;
+        if (lock) return;
+        if (stack.isEmpty()) {
+            lastSlotStates.remove(slotInd);
+            return;
+        }
 
         Object lastState = lastSlotStates.get(slotInd);
         if (shouldSkipUpdate(stack, lastState)) return;
 
         lastSlotStates.put(slotInd, PouchConfig.ignoreNBT ? getSimpleKey(stack) : getStackHash(stack));
 
-        lock = true;
-        PouchOfUnknownEvents.detect(player, slotInd);
-        lock = false;
+        try {
+            lock = true;
+            PouchOfUnknownEvents.detect(player, slotInd);
+        } finally {
+            lock = false;
+        }
     }
 
     private boolean shouldSkipUpdate(ItemStack current, Object previousState) {
@@ -58,11 +68,11 @@ public class PlayerInventoryListener implements IContainerListener {
     }
 
     private String getSimpleKey(ItemStack stack) {
-        return stack.getItem().getRegistryName() + "#" + stack.getCount();
+        return stack.getItem().getRegistryName() + "#" + stack.getMetadata() + "#" + stack.getCount();
     }
 
     private int getStackHash(ItemStack stack) {
-        int hash = stack.getItem().hashCode() ^ stack.getCount();
+        int hash = stack.getItem().hashCode() ^ stack.getMetadata() ^ stack.getCount();
         if (stack.hasTagCompound()) {
             if (stack.getTagCompound() != null) {
                 hash ^= stack.getTagCompound().hashCode();

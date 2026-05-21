@@ -40,11 +40,11 @@ public class Util {
         NBTTagList tagList = (NBTTagList) getOrCreateSubtag(getOrCreateTag(pouch), ItemPouchOfUnknown.INVENTORY_TAG_NAME, new NBTTagList());
         ItemStack remnant = stack;
 
-        for (int i = 0; i < getTagListSize(tagList); i++) {
+        for (int i = 0; i < tagList.tagCount(); i++) {
             NBTBase itemTag = tagList.get(i);
             if (itemTag instanceof NBTTagCompound) {
                 ItemStack tagStack = new ItemStack((NBTTagCompound) itemTag);
-                StackResult result = stackItem(tagStack, stack);
+                StackResult result = stackItem(tagStack, remnant);
                 remnant = result.getRemnant();
                 tagList.set(i, result.getResult().serializeNBT());
                 if (remnant.isEmpty()) {
@@ -53,7 +53,7 @@ public class Util {
             }
         }
         ItemStack ret;
-        if (getTagListSize(tagList) < PouchConfig.pouchCapacity && !remnant.isEmpty()) {
+        if (tagList.tagCount() < PouchConfig.pouchCapacity && !remnant.isEmpty()) {
             tagList.appendTag(remnant.serializeNBT());
             ret = ItemStack.EMPTY;
         } else {
@@ -65,7 +65,7 @@ public class Util {
 
     public static ItemStack extractItem(ItemStack pouch) {
         NBTTagList tagList = (NBTTagList) getOrCreateSubtag(getOrCreateTag(pouch), ItemPouchOfUnknown.INVENTORY_TAG_NAME, new NBTTagList());
-        int size = getTagListSize(tagList);
+        int size = tagList.tagCount();
         if (size == 0) {
             return ItemStack.EMPTY;
         } else {
@@ -89,14 +89,6 @@ public class Util {
             }
         }
         return stackList;
-    }
-
-    public static int getTagListSize(NBTTagList tagList) {
-        int i = 0;
-        for (NBTBase ignored : tagList) {
-            i++;
-        }
-        return i;
     }
 
     public static void setItems(ItemStack pouch, List<ItemStack> items) {

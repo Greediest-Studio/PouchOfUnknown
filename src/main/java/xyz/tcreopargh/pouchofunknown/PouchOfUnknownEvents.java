@@ -21,17 +21,12 @@ import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Mod.EventBusSubscriber(modid = PouchOfUnknownMod.MODID)
 public final class PouchOfUnknownEvents {
 
     public static final int MAX_SLOT_NUMBER = 40;
-
-    private static final AtomicReference<Method> method = new AtomicReference<>();
 
     public static void detect(EntityPlayer player) {
         detect(player, -1);
@@ -77,7 +72,7 @@ public final class PouchOfUnknownEvents {
             ItemStack remnant = stack;
             if (!isQualified(player, stack, true)) {
                 if (hasPouch && isQualified(player, pouch, true)) {
-                    if (Arrays.asList(PouchConfig.disabledStagesList).contains(ItemStages.getStage(stack))) {
+                    if (isDisabledStage(ItemStages.getStage(stack))) {
                         if (PouchConfig.showMessage) {
                             player.sendMessage(new TextComponentTranslation(
                                     "pouchofunknown.disabled_item_message")
@@ -168,7 +163,7 @@ public final class PouchOfUnknownEvents {
         if (!isQualified(player, stack, true)) {
             event.setCanceled(true);
             if (hasPouch && isQualified(player, pouch, true)) {
-                if (Arrays.asList(PouchConfig.disabledStagesList).contains(ItemStages.getStage(stack))) {
+                if (isDisabledStage(ItemStages.getStage(stack))) {
                     event.getItem().world.removeEntity(event.getItem());
                     if (PouchConfig.showMessage) {
                         player.sendMessage(new TextComponentTranslation(
@@ -179,6 +174,7 @@ public final class PouchOfUnknownEvents {
                     remnant = Util.insertItem(pouch, remnant);
                     String displayString = getDisplayName(stack, player);
                     if (!remnant.isEmpty()) {
+                        event.getItem().setItem(remnant);
                         player.sendStatusMessage(new TextComponentTranslation(
                                 "pouchofunknown.cant_pickup_pouch_full_message")
                                 .setStyle(new Style().setColor(TextFormatting.YELLOW)), true);
@@ -217,7 +213,19 @@ public final class PouchOfUnknownEvents {
     }
 
     public static boolean isValidPouch(ItemStack pouch) {
-        return Objects.equals(Objects.requireNonNull(pouch.getItem().getRegistryName()).toString(), ItemPouchOfUnknown.registryName);
+        return !pouch.isEmpty() && Objects.equals(pouch.getItem().getRegistryName(), ItemPouchOfUnknown.itemPouchOfUnknown.getRegistryName());
+    }
+
+    public static boolean isDisabledStage(String stage) {
+        if (stage == null) {
+            return false;
+        }
+        for (String disabledStage : PouchConfig.disabledStagesList) {
+            if (stage.equals(disabledStage)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isQualified(EntityPlayer player, ItemStack stack, boolean ignoreCreative) {

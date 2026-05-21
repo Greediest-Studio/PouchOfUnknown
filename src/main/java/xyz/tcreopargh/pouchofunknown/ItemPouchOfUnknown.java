@@ -62,12 +62,6 @@ public final class ItemPouchOfUnknown extends Item implements IBauble {
     }
 
     @SideOnly(Side.CLIENT)
-    @SubscribeEvent
-    public static void registerRenders(ModelRegistryEvent event) {
-        ModelLoader.setCustomModelResourceLocation(itemPouchOfUnknown, 0, new ModelResourceLocation(Objects.requireNonNull(itemPouchOfUnknown.getRegistryName()), "inventory"));
-    }
-
-    @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         EntityPlayer player = Minecraft.getMinecraft().player;
@@ -109,10 +103,11 @@ public final class ItemPouchOfUnknown extends Item implements IBauble {
             List<ItemStack> items = Util.getItems(pouch);
             boolean isInventoryFull = false;
             for (int i = items.size() - 1; i >= 0; i--) {
-                if (isQualified(player, items.get(i), false)) {
-                    if (!items.get(i).isEmpty() && (pickUpAll || player.inventory.getFirstEmptyStack() >= 0)) {
+                ItemStack current = items.get(i);
+                if (isQualified(player, current, false)) {
+                    if (!current.isEmpty() && (pickUpAll || player.inventory.getFirstEmptyStack() >= 0)) {
                         dropCount++;
-                        ItemStack extract = items.get(i);
+                        ItemStack extract = current;
                         items.set(i, ItemStack.EMPTY);
                         ItemHandlerHelper.giveItemToPlayer(player, extract);
                     }
