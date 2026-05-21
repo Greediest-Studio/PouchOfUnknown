@@ -60,12 +60,10 @@ public final class PouchOfUnknownEvents {
         int indexEnd = MAX_SLOT_NUMBER;
 
 
-        /* This doesnt check the hotbar for some reason
-        if (index >= 0) {
+        if (index >= 0 && index <= MAX_SLOT_NUMBER) {
             indexBegin = index;
             indexEnd = index;
         }
-        */
 
         for (int slot = indexBegin; slot <= indexEnd; slot++) {
             ItemStack stack = player.inventory.getStackInSlot(slot).copy();

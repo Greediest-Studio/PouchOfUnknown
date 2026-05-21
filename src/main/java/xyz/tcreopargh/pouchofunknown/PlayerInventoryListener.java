@@ -4,6 +4,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IContainerListener;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
@@ -37,6 +38,11 @@ public class PlayerInventoryListener implements IContainerListener {
     @Override
     public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack) {
         if (lock) return;
+        int playerSlot = getPlayerInventorySlot(containerToSend, slotInd);
+        if (playerSlot < 0) {
+            lastSlotStates.remove(slotInd);
+            return;
+        }
         if (stack.isEmpty()) {
             lastSlotStates.remove(slotInd);
             return;
@@ -49,10 +55,21 @@ public class PlayerInventoryListener implements IContainerListener {
 
         try {
             lock = true;
-            PouchOfUnknownEvents.detect(player, slotInd);
+            PouchOfUnknownEvents.detect(player, playerSlot);
         } finally {
             lock = false;
         }
+    }
+
+    private int getPlayerInventorySlot(Container container, int containerSlot) {
+        if (containerSlot < 0 || containerSlot >= container.inventorySlots.size()) {
+            return -1;
+        }
+        Slot slot = container.inventorySlots.get(containerSlot);
+        if (slot.inventory != player.inventory) {
+            return -1;
+        }
+        return slot.getSlotIndex();
     }
 
     private boolean shouldSkipUpdate(ItemStack current, Object previousState) {
