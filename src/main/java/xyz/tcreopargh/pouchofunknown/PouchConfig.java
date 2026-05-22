@@ -3,7 +3,7 @@ package xyz.tcreopargh.pouchofunknown;
 import net.minecraftforge.common.config.Config;
 
 @Config(
-        modid = PouchOfUnknownMod.MODID
+        modid = Tags.MOD_ID
 )
 public class PouchConfig {
     @Config.LangKey("pouchofunknown.config.show_message")

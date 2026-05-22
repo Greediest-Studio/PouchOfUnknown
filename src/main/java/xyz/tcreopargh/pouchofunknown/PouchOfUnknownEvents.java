@@ -5,7 +5,6 @@ import baubles.api.cap.IBaublesItemHandler;
 import net.darkhax.gamestages.GameStageHelper;
 import net.darkhax.gamestages.event.GameStageEvent;
 import net.darkhax.itemstages.ItemStages;
-import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -23,7 +22,7 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 
 import java.util.Objects;
 
-@Mod.EventBusSubscriber(modid = PouchOfUnknownMod.MODID)
+@Mod.EventBusSubscriber(modid = Tags.MOD_ID)
 public final class PouchOfUnknownEvents {
 
     public static void detect(EntityPlayer player) {
@@ -37,11 +36,13 @@ public final class PouchOfUnknownEvents {
         int indexBegin = 0;
         int indexEnd = player.inventory.getSizeInventory() - 1;
 
-
         if (index >= 0 && index <= indexEnd) {
             indexBegin = index;
             indexEnd = index;
         }
+
+        EntityPlayerMP playerMP = player instanceof EntityPlayerMP ? (EntityPlayerMP) player : null;
+        boolean inventoryChanged = false;
 
         for (int slot = indexBegin; slot <= indexEnd; slot++) {
             ItemStack stack = player.inventory.getStackInSlot(slot).copy();
@@ -57,7 +58,7 @@ public final class PouchOfUnknownEvents {
                         }
                     } else {
                         remnant = Util.insertItem(pouch, remnant);
-                        String displayString = getDisplayName(stack, player);
+                        String displayString = getDisplayName(stack);
                         if (!remnant.isEmpty()) {
                             if (!PouchConfig.destroyItemWithoutPouch) {
                                 player.dropItem(remnant, true);
@@ -69,7 +70,6 @@ public final class PouchOfUnknownEvents {
                                         "pouchofunknown.full_destroy_message", displayString, "\n")
                                         .setStyle(new Style().setColor(TextFormatting.YELLOW)));
                             }
-
                         } else {
                             if (PouchConfig.showMessage) {
                                 player.sendMessage(new TextComponentTranslation(
@@ -83,7 +83,7 @@ public final class PouchOfUnknownEvents {
                         player.dropItem(stack, true);
                     }
                     if (PouchConfig.showMessage && !stack.isEmpty()) {
-                        String displayString = getDisplayName(stack, player);
+                        String displayString = getDisplayName(stack);
                         if (!stack.isEmpty()) {
                             if (!PouchConfig.destroyItemWithoutPouch) {
                                 player.sendMessage(new TextComponentTranslation(
@@ -98,12 +98,15 @@ public final class PouchOfUnknownEvents {
                     }
                 }
                 player.inventory.setInventorySlotContents(slot, ItemStack.EMPTY);
-                if (player instanceof EntityPlayerMP) {
-                    EntityPlayerMP playerMP = (EntityPlayerMP) player;
-                    playerMP.sendContainerToPlayer(player.inventoryContainer);
-                }
-                player.inventoryContainer.detectAndSendChanges();
+                inventoryChanged = true;
             }
+        }
+
+        if (inventoryChanged) {
+            if (playerMP != null) {
+                playerMP.sendContainerToPlayer(player.inventoryContainer);
+            }
+            player.inventoryContainer.detectAndSendChanges();
         }
     }
 
@@ -130,7 +133,7 @@ public final class PouchOfUnknownEvents {
                     }
                 } else {
                     remnant = Util.insertItem(pouch, remnant);
-                    String displayString = getDisplayName(stack, player);
+                    String displayString = getDisplayName(stack);
                     if (!remnant.isEmpty()) {
                         event.getItem().setItem(remnant);
                         player.sendStatusMessage(new TextComponentTranslation(
@@ -221,7 +224,7 @@ public final class PouchOfUnknownEvents {
         return GameStageHelper.hasStage(player, stage);
     }
 
-    public static String getDisplayName(ItemStack stack, ICommandSender sender) {
+    public static String getDisplayName(ItemStack stack) {
         String unfamiliarName;
         if (PouchConfig.showItemName) {
             unfamiliarName = stack.getDisplayName();
@@ -235,9 +238,9 @@ public final class PouchOfUnknownEvents {
 
     @SubscribeEvent
     public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs) {
-        if (eventArgs.getModID().equals(PouchOfUnknownMod.MODID)) {
-            PouchOfUnknownMod.logger.info("Pouch Of Unknown config changed!");
-            ConfigManager.sync(PouchOfUnknownMod.MODID, Config.Type.INSTANCE);
+        if (eventArgs.getModID().equals(Tags.MOD_ID)) {
+            PouchOfUnknownMod.LOGGER.info("Pouch Of Unknown config changed!");
+            ConfigManager.sync(Tags.MOD_ID, Config.Type.INSTANCE);
         }
     }
 

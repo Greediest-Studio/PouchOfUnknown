@@ -59,25 +59,7 @@ public class Util {
         } else {
             ret = remnant;
         }
-        Objects.requireNonNull(pouch.getTagCompound()).setTag(ItemPouchOfUnknown.INVENTORY_TAG_NAME, tagList);
         return ret;
-    }
-
-    public static ItemStack extractItem(ItemStack pouch) {
-        NBTTagList tagList = (NBTTagList) getOrCreateSubtag(getOrCreateTag(pouch), ItemPouchOfUnknown.INVENTORY_TAG_NAME, new NBTTagList());
-        int size = tagList.tagCount();
-        if (size == 0) {
-            return ItemStack.EMPTY;
-        } else {
-            NBTBase itemTag = tagList.get(size - 1);
-            ItemStack ret = ItemStack.EMPTY;
-            if (itemTag instanceof NBTTagCompound) {
-                ret = new ItemStack((NBTTagCompound) tagList.get(size - 1).copy());
-                tagList.removeTag(size - 1);
-            }
-            Objects.requireNonNull(pouch.getTagCompound()).setTag(ItemPouchOfUnknown.INVENTORY_TAG_NAME, tagList);
-            return ret;
-        }
     }
 
     public static List<ItemStack> getItems(ItemStack pouch) {

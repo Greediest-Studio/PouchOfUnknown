@@ -9,6 +9,7 @@ import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
@@ -20,7 +21,6 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.common.IRarity;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -35,11 +35,11 @@ import java.util.Objects;
 import static xyz.tcreopargh.pouchofunknown.PouchOfUnknownEvents.isQualified;
 
 
-@Mod.EventBusSubscriber(modid = PouchOfUnknownMod.MODID)
+@Mod.EventBusSubscriber(modid = Tags.MOD_ID)
 public final class ItemPouchOfUnknown extends Item implements IBauble {
 
     public static final ItemPouchOfUnknown itemPouchOfUnknown = new ItemPouchOfUnknown();
-    public static final String registryName = PouchOfUnknownMod.MODID + ":" + "pouch";
+    public static final String registryName = Tags.MOD_ID + ":" + "pouch";
 
     public static final String INVENTORY_TAG_NAME = "Inventory";
 
@@ -86,18 +86,10 @@ public final class ItemPouchOfUnknown extends Item implements IBauble {
     }
 
     @Override
-    public CreativeTabs getCreativeTab() {
-        return CreativeTabs.MISC;
-    }
-
-    @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         if (playerIn instanceof EntityPlayerMP && !worldIn.isRemote) {
             EntityPlayerMP player = (EntityPlayerMP) playerIn;
             ItemStack pouch = playerIn.getHeldItem(handIn);
-            if (!(pouch.getItem() instanceof ItemPouchOfUnknown)) {
-                return ActionResult.newResult(EnumActionResult.FAIL, playerIn.getHeldItem(handIn));
-            }
             boolean pickUpAll = player.isSneaking();
             int dropCount = 0;
             List<ItemStack> items = Util.getItems(pouch);
@@ -108,9 +100,8 @@ public final class ItemPouchOfUnknown extends Item implements IBauble {
                 if (isQualified(player, current, false)) {
                     if (!current.isEmpty() && hasEmptySlot) {
                         dropCount++;
-                        ItemStack extract = current;
                         items.set(i, ItemStack.EMPTY);
-                        ItemHandlerHelper.giveItemToPlayer(player, extract);
+                        ItemHandlerHelper.giveItemToPlayer(player, current);
                         hasEmptySlot = pickUpAll || player.inventory.getFirstEmptyStack() >= 0;
                     }
                     if (!pickUpAll && !hasEmptySlot) {
@@ -134,18 +125,8 @@ public final class ItemPouchOfUnknown extends Item implements IBauble {
     }
 
     @Override
-    public IRarity getForgeRarity(ItemStack stack) {
-        return new IRarity() {
-            @Override
-            public TextFormatting getColor() {
-                return TextFormatting.YELLOW;
-            }
-
-            @Override
-            public String getName() {
-                return stack.getDisplayName();
-            }
-        };
+    public EnumRarity getForgeRarity(ItemStack stack) {
+        return EnumRarity.UNCOMMON;
     }
 
     @Override

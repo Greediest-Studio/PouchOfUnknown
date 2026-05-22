@@ -54,7 +54,9 @@ public class PlayerInventoryListener implements IContainerListener {
 
     @Override
     public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack) {
-        if (lock) return;
+        if (lock) {
+            return;
+        }
         int playerSlot = getPlayerInventorySlot(containerToSend, slotInd);
         if (playerSlot < 0) {
             lastSlotStates.remove(slotInd);
@@ -66,7 +68,9 @@ public class PlayerInventoryListener implements IContainerListener {
         }
 
         Object lastState = lastSlotStates.get(slotInd);
-        if (shouldSkipUpdate(stack, lastState)) return;
+        if (shouldSkipUpdate(stack, lastState)) {
+            return;
+        }
 
         lastSlotStates.put(slotInd, PouchConfig.ignoreNBT ? getSimpleKey(stack) : getStackHash(stack));
 
@@ -90,7 +94,9 @@ public class PlayerInventoryListener implements IContainerListener {
     }
 
     private boolean shouldSkipUpdate(ItemStack current, Object previousState) {
-        if (previousState == null || current.isEmpty()) return false;
+        if (previousState == null || current.isEmpty()) {
+            return false;
+        }
 
         if (PouchConfig.ignoreNBT) {
             String currentKey = getSimpleKey(current);
