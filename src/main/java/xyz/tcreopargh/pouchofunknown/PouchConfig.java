@@ -11,7 +11,7 @@ public class PouchConfig {
     public static boolean showMessage = true;
 
     @Config.LangKey("pouchofunknown.config.ignore_nbt")
-    @Config.Comment("是否忽略在背包中变动的物品nbt")
+    @Config.Comment("Ignore NBT")
     public static boolean ignoreNBT = true;
 
     @Config.RangeInt(min = 1, max = 4096)
